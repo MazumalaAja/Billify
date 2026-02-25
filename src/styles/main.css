@@ -1,0 +1,11 @@
+/* =====> TAILWINDCSS */
+@import "tailwindcss";
+
+/* =====> MY-SETUP */
+:root {
+  interpolate-size: allow-keywords;
+}
+
+body {
+  font-family: "poppins", Arial, Helvetica, sans-serif;
+}
