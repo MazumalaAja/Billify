@@ -8,7 +8,7 @@ const useHomePage = () => {
     const data = localStorage.getItem(key);
     if (data == undefined) return defaultValue;
     try {
-      return data ? JSON.parse(data) : defaultValue;
+      return data.length > 0 ? JSON.parse(data) : defaultValue;
     } catch (err) {
       console.log(err);
       return defaultValue;
@@ -19,29 +19,36 @@ const useHomePage = () => {
   const [input, setInput] = useState({
     idTeman: null,
     idItem: null,
-    title: "",
+    title: JSON.parse(localStorage.getItem("title")) ?? "",
     namaTeman: "",
     namaItem: "",
-    hargaItem: 0,
-    jumlahItem: 0
+    hargaItem: "",
+    jumlahItem: "",
+    pajak: JSON.parse(localStorage.getItem("pajak")) ?? ""
   })
   const [listTeman, setListTeman] = useState(() => {
-    return getLocalData("listTeman", [])
+    return getLocalData("listTeman", []);
   });
+  const [listItem, setListItem] = useState(() => {
+    return getLocalData("listItem", []);
+  })
 
   // =====> HANDLE CLICK
   const handleClickTeman = (action, id) => {
-    if (!input.namaTeman.trim() || input.namaTeman == "") return;
+    if (input.namaTeman == "") return;
 
     if (action == "add") {
-      setListTeman(prev => [...prev,
-      {
-        id: Date.now(),
-        namaTeman: input.namaTeman,
-        items: [],
-        createdAt: new Date().toISOString().split("T")[0],
-        status: "tidak ada"
-      }]);
+      if (listTeman.find(data => data.namaTeman == input.namaTeman.toLowerCase())) return alert("Nama telah digunakan")
+      setListTeman(prev => (
+        [...prev,
+        {
+          id: Date.now(),
+          namaTeman: input.namaTeman,
+          items: [],
+          createdAt: new Date().toISOString().split("T")[0],
+          status: "tidak ada"
+        }]
+      ));
     } else if (action == "edit") {
       setListTeman(prev => prev.map(data => data.id == id ? { ...data, namaTeman: input.namaTeman } : data));
     } else {
@@ -50,13 +57,40 @@ const useHomePage = () => {
     setInput(prev => ({ ...prev, id: null, namaTeman: "" }));
   }
 
+  const handleClickItem = (action, id) => {
+    if (action == "add") {
+      if (input.namaItem == "" || input.hargaItem == 0 || input.jumlahItem == 0) return;
+      setListItem(prev => {
+        const exist = prev.find(data => data.namaItem == input.namaItem.toLocaleLowerCase().trim());
+        if (exist) {
+          return prev.map(item => item.namaItem == input.namaItem.toLocaleLowerCase() ? { ...item, jumlahItem: parseInt(item.jumlahItem) + parseInt(input.jumlahItem) } : item)
+        } else {
+          return [...prev, {
+            id: Date.now(),
+            namaItem: input.namaItem,
+            hargaItem: input.hargaItem,
+            jumlahItem: input.jumlahItem,
+            createdAt: new Date().toISOString().split("T")[0]
+          }]
+        }
+      })
+    }
+    else if (action == "edit") {
+      setListItem(prev => prev.map(data => data.id == id ? { ...data, namaItem: input.namaItem, hargaItem: input.hargaItem, jumlahItem: input.jumlahItem } : data))
+    }
+    else {
+      setListItem(prev => prev.filter(item => item.id !== id));
+    }
+    setInput(prev => ({ ...prev, idItem: null, namaItem: "", hargaItem: "", jumlahItem: "" }))
+  }
+
   // =====> HANDLE CHANGE
   const handleChange = (key, value) => {
     setInput(prev => ({ ...prev, [key]: value }));
   }
 
   // RETURN
-  return { handleClickTeman, handleChange, input, setInput, listTeman };
+  return { handleClickTeman, handleChange, handleClickItem, input, setInput, listTeman, listItem };
 }
 
 // =====> EXPORTS

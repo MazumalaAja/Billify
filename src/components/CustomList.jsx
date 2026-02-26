@@ -1,3 +1,6 @@
+// =====> IMPORTS
+import Rupiah from "../utils/rupiah";
+
 // =====> MY-SETUP
 const CustomList = ({ data = [], children }) => {
   return (
@@ -6,7 +9,8 @@ const CustomList = ({ data = [], children }) => {
         <li key={index} className="flex justify-between items-center shadow-sm p-2 rounded-md bg-white border border-gray-300">
           <div className="flex flex-col">
             <h3 className="text-sm md:text-base capitalize text-gray-700">{item?.namaItem ?? item?.namaTeman}</h3>
-            <small className="text-[0.7rem] text-gray-400">{item?.hargaItem ?? `${item?.createdAt}`}</small>
+            <small className="text-[0.7rem] text-gray-400"> {item?.hargaItem
+              ? `${Rupiah(item.hargaItem)} × ${item.jumlahItem}` : `${item?.createdAt}`}</small>
           </div>
 
           {/* =====> Buttons */}
