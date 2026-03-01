@@ -1,5 +1,5 @@
 // =====> IMPORTS
-import { FiBook, FiBox, FiEdit, FiEdit2, FiInfo, FiPlus, FiTrash2, FiUser, FiUsers } from "react-icons/fi";
+import { FiBook, FiBox, FiEdit, FiEdit2, FiInfo, FiMinus, FiPlus, FiTrash2, FiUser, FiUsers } from "react-icons/fi";
 import CustomSection from "@/components/CustomSection";
 import CustomInput from "@/components/CustomInput";
 import CustomButton from "@/components/CustomButton";
@@ -16,19 +16,20 @@ import CustomCheckbox from "../components/CustomCheckBox";
 // =====> MY-SETUP
 const HomePage = () => {
   // =====> USEHOMEPAGE
-  const { handleClickTeman, handleChange, handleClickItem, input, setInput, listTeman, listItem, total, handleCheckbox } = useHomePage();
+  const { handleClickTeman, handleSelectJumlah, handleChange, handleClickItem, input, setInput, listTeman, listItem, total, handleCheckbox, cost } = useHomePage();
 
   // STATES
   const [open, setOpen] = useState({
     modalEdit: false,
     modalDelete: false,
-    modalItems: false
+    modalItems: false,
+    modalResult: false
   })
 
   // =====> USEEFFECT
   useEffect(() => {
-    console.log(input)
-    console.log(listTeman);
+    console.log(cost);
+    console.log(input);
     localStorage.setItem("listTeman", JSON.stringify(listTeman))
     localStorage.setItem("listItem", JSON.stringify(listItem))
     localStorage.setItem("pajak", JSON.stringify(input.pajak))
@@ -112,7 +113,7 @@ const HomePage = () => {
       }}>
         <CustomSection Icon={RiListCheck} title={`List Produk.`} customStyle={`w-full overflow-auto max-h-[60dvh] md:w-[85vw] lg:w-[60vw] space-y-1`}>
           {listItem?.map((item, index) => (
-            <div key={index} className="bg-white flex shadow-sm border border-gray-300 rounded-md p-2">
+            <div key={index} className="bg-white flex justify-between shadow-sm border border-gray-300 rounded-md p-2">
               <div className="flex gap-2 items-center">
                 <CustomCheckbox checked={listTeman.find(data => data.id == input.idTeman)?.items.find(data => data.idItem == item.id) ?? false} onClick={(checked) => handleCheckbox(input.idTeman, item.id, checked)} />
 
@@ -121,8 +122,43 @@ const HomePage = () => {
                   <small className="text-gray-400 text-xs">{Rupiah(item.hargaItem)}</small>
                 </div>
               </div>
+
+              {listTeman.find(data => data.id == input.idTeman)?.items.find(data => data.idItem == item.id)?.jumlahItem > 0 && <div className="flex gap-1.5 items-center">
+                <CustomButton onClick={() => handleSelectJumlah(input.idTeman, item.id, "add")} Icon={FiPlus} customStyle={`p-2! bg-green-500! text-xs sm:text-sm md:text-base`} />
+                <span className="text-xs md:text=sm lg:text-base">{listTeman.find(data => data.id == input.idTeman)?.items.find(data => data.idItem == item.id)?.jumlahItem ?? 0}</span>
+                <CustomButton onClick={() => handleSelectJumlah(input.idTeman, item.id, "minus")} Icon={FiMinus} customStyle={`p-2! bg-red-500 text-xs sm:text-sm md:text-base`} />
+              </div>}
             </div>
           ))}
+        </CustomSection>
+      </CustomModal>}
+
+      {/* =====> MODAL RESULT */}
+      {open.modalResult && <CustomModal onClose={() => {
+        setInput(prev => ({ ...prev, idTeman: null }));
+        setOpen(prev => ({ ...prev, modalResult: false }))
+      }} customStyle={'flex justify-center items-center'} >
+        <CustomSection customStyle={`w-[90vw] md:w-[60vw]`} title={`Detail pesanan`}>
+          {cost?.map((data, index) => {
+            if (data.id == input.idTeman) {
+              return (
+                <>
+                  <ul key={index} className="space-y-1 mb-3">
+                    {data.menu?.map((v, i) => (
+                      <li key={i} className="flex flex-col p-2 bg-white shadow-sm border border-gray-300 rounded-md">
+                        <h2 className="capitalize">{v.nama}</h2>
+                        <small className="text-xs text-gray-400">{`${Rupiah(v.harga)} × ${v.jumlah}`}</small>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="bg-linear-to-r from-indigo-500 to-indigo-200 p-2 rounded-md text-indigo-50">
+                    <h2>Total : {Rupiah(data.total)}</h2>
+                  </div>
+                </>
+              )
+            }
+          })}
         </CustomSection>
       </CustomModal>}
 
@@ -250,14 +286,35 @@ const HomePage = () => {
 
         {/* =====> HASIL AKHIR */}
         <CustomSection title="Hasil akhir." Icon={RiEqualLine}>
-          <div className=" w-full max-w-80 mx-auto">
+          {listTeman?.some(data => data.items.length < 1) && <div className=" w-full max-w-80 mx-auto">
             <img src={hasil} alt="hasil-picture" />
-          </div>
+          </div>}
 
-          <div className="text-center">
+          {listTeman?.some(data => data.items.length < 1) && <div className="text-center">
             <h2 className="text-sm md:text-base text-gray-700 mb-2">Data masih kosong!</h2>
             <p className="text-xs md:text-sm text-gray-400 mb-2">Silahkan lengkapi semua data untuk memulai pembagian!</p>
-          </div>
+          </div>}
+
+          {listTeman.every(data => data.items.length > 0) &&
+            <ul className="space-y-1">
+              {cost?.map(teman => (
+                <li key={teman.id} className="bg-white p-2 border border-gray-300 rounded-md shadow-sm flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <h2 className="capitalize">{teman.nama}</h2>
+                    <small className="text-gray-400">{Rupiah(teman.total)}</small>
+                  </div>
+
+                  <div>
+                    <CustomButton onClick={() => {
+                      setOpen(prev => ({ ...prev, modalResult: true }));
+                      setInput(prev => ({ ...prev, idTeman: teman.id }))
+                    }} customStyle={`p-2! w-max! text-xs sm:text-sm md:text-base`} Icon={FiInfo} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          }
+
         </CustomSection>
       </div>
     </>

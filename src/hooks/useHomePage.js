@@ -95,6 +95,15 @@ const useHomePage = () => {
     }
   }
 
+  const handleSelectJumlah = (idTeman, idItem, action) => {
+    if (!listTeman.some(data => data.id === idTeman)) return;
+    if (action == "add") {
+      setListTeman(prev => prev.map(data => data.id === idTeman ? { ...data, items: data.items.map(dataItem => dataItem.idItem === idItem ? { ...dataItem, jumlahItem: dataItem.jumlahItem + 1 } : dataItem) } : data))
+    } else {
+      setListTeman(prev => prev.map(data => data.id === idTeman ? { ...data, items: data.items.map(dataItem => dataItem.idItem === idItem ? { ...dataItem, jumlahItem: dataItem.jumlahItem > 1 ? dataItem.jumlahItem - 1 : dataItem.jumlahItem } : dataItem) } : data))
+    }
+  }
+
   // =====> HANDLE CHANGE
   const handleChange = (key, value) => {
     setInput(prev => ({ ...prev, [key]: value }));
@@ -107,11 +116,45 @@ const useHomePage = () => {
     }, 0)
   }
 
+  const getCost = (dataTeman, dataItem) => {
+    const listHarga = {}
+    const listItem = {}
+    const tax = Number(input.pajak) / listTeman.length;
+    dataItem.forEach((item, index) => {
+      listItem[item.id] = item.namaItem;
+      listHarga[item.id] = item.hargaItem;
+    });
+
+    return dataTeman.map((teman, index) => {
+      let totalHarga = 0;
+      let menu = []
+      teman.items.forEach((data, index) => {
+        totalHarga += Number(listHarga[data.idItem] || 0) * Number(data.jumlahItem || 0);
+        menu.push({
+          nama: listItem[data.idItem],
+          harga: listHarga[data.idItem],
+          jumlah: data.jumlahItem,
+        })
+      })
+
+      return {
+        id: teman.id,
+        nama: teman.namaTeman,
+        total: totalHarga + tax,
+        menu: menu,
+        pajak: tax
+      }
+    })
+  }
+
   // TOTAL
   const total = getTotal(listItem);
 
+  // COST
+  const cost = getCost(listTeman, listItem);
+
   // RETURN
-  return { handleClickTeman, handleChange, handleClickItem, input, setInput, listTeman, listItem, total, handleCheckbox };
+  return { handleClickTeman, handleSelectJumlah, handleChange, handleClickItem, input, setInput, listTeman, listItem, total, handleCheckbox, cost };
 }
 
 // =====> EXPORTS
